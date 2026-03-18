@@ -72,13 +72,14 @@ val modifiedRom = rom.withFiles(
 File("game_modified.nds").writeBytes(modifiedRom.pack())
 ```
 
-### Replacing the ARM9 binary
+### Replacing the ARM7/ARM9 binary
 
 ```kotlin
 val rom = NdsRom.parse(File("game.nds").readBytes())
+val newArm7 = File("arm7_patched.bin").readBytes()
 val newArm9 = File("arm9_patched.bin").readBytes()
 
-val modifiedRom = rom.withArm9(newArm9)
+val modifiedRom = rom.withArm7(newArm7).withArm9(newArm9)
 File("game_modified.nds").writeBytes(modifiedRom.pack())
 ```
 

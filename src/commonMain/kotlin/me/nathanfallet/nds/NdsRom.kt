@@ -50,6 +50,8 @@ class NdsRom private constructor(
     // -------------------------------------------------------------------------
 
     fun withArm9(data: ByteArray) = copy(arm9 = data)
+
+    fun withArm7(data: ByteArray) = copy(arm7 = data)
     fun withFile(path: String, data: ByteArray) = copy(files = files + (path to data))
     fun withFiles(updates: Map<String, ByteArray>) = copy(files = files + updates)
 
@@ -170,6 +172,7 @@ class NdsRom private constructor(
 
     private fun copy(
         arm9: ByteArray = this.arm9,
+        arm7: ByteArray = this.arm7,
         files: Map<String, ByteArray> = this.files,
     ) = NdsRom(
         rawHeader, arm9, arm7,

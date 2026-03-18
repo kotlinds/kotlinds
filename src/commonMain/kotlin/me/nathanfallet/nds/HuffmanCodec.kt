@@ -312,6 +312,69 @@ object HuffmanCodec {
         }
 
         val totalPairs = nextSlot
+
+        // Post-process: fix any 6-bit offset violations by swapping nodes.
+        // The BFS allocation places children far from parents for deep or wide trees.
+        // We iteratively swap out-of-range children with closer nodes until all
+        // offsets fit in 6 bits (≤ 63).
+        run {
+            val pairToNode = IntArray(totalPairs) { -1 }
+            for (n in pairOf.indices) {
+                val p = pairOf[n]; if (p in 0 until totalPairs) pairToNode[p] = n
+            }
+            // parentOf[nodeIdx] = the internal node that has nodeIdx as a child, or -1 for root
+            val parentOf = IntArray(512) { -1 }
+            for (n in bfsOrder) {
+                parentOf[nodeLeft[n]] = n; parentOf[nodeRight[n]] = n
+            }
+
+            var iterations = totalPairs * totalPairs  // generous upper bound
+            var anyViolation: Boolean
+            do {
+                anyViolation = false
+                for (parentNode in bfsOrder) {
+                    val pp = pairOf[parentNode]
+                    for (childNode in listOf(nodeLeft[parentNode], nodeRight[parentNode])) {
+                        val cp = pairOf[childNode]
+                        if (cp - pp - 1 <= 63) continue          // already fine
+
+                        // Find the nearest swap target within [pp+1, pp+63]
+                        var fixed = false
+                        for (targetPair in pp + 1..minOf(pp + 63, totalPairs - 1)) {
+                            val displaced = pairToNode[targetPair]
+                            if (displaced < 0 || displaced == parentNode) continue
+
+                            // displaced's parent must still reach it at the new (farther) position
+                            val dp = parentOf[displaced]
+                            if (dp >= 0 && cp - pairOf[dp] - 1 > 63) continue
+
+                            // If displaced is an internal node, its children must remain
+                            // reachable from its new position (cp > targetPair, so offset shrinks)
+                            if (displaced >= 256) {
+                                val lc = pairOf[nodeLeft[displaced]]
+                                val rc = pairOf[nodeRight[displaced]]
+                                if (lc <= cp || rc <= cp) continue  // children would precede parent
+                            }
+
+                            // Perform the swap
+                            pairOf[childNode] = targetPair
+                            pairOf[displaced] = cp
+                            pairToNode[targetPair] = childNode
+                            pairToNode[cp] = displaced
+                            anyViolation = true
+                            fixed = true
+                            break
+                        }
+                        require(fixed) {
+                            "HuffmanCodec: DS 6-bit tree offset constraint unsatisfiable. " +
+                                    "Compress with fewer distinct byte values (current: ${usedSymbols.size})."
+                        }
+                    }
+                }
+                iterations--
+            } while (anyViolation && iterations > 0)
+        }
+
         val treeData = ByteArray(totalPairs * 2)
 
         // Fill internal node descriptors
@@ -324,9 +387,6 @@ object HuffmanCodec {
 
             val leftOffset = slotL - pIdx - 1
             val rightOffset = slotR - pIdx - 1
-
-            require(leftOffset in 0..63) { "DS Huffman: left offset $leftOffset out of 6-bit range (pair $pIdx → $slotL)" }
-            require(rightOffset in 0..63) { "DS Huffman: right offset $rightOffset out of 6-bit range (pair $pIdx → $slotR)" }
 
             var leftDesc = leftOffset
             var rightDesc = rightOffset
