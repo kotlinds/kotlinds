@@ -20,7 +20,11 @@ object BlzCodec {
 
     /**
      * Decompresses a BLZ-encoded buffer.
-     * Returns the input unchanged if it carries the "not encoded" marker (inc_len == 0).
+     *
+     * @param input The BLZ-encoded byte array (footer-based format, no magic byte).
+     * @return The decompressed data, or a copy of [input] if it carries
+     *   the "not encoded" marker (`inc_len == 0`).
+     * @throws IllegalArgumentException if the BLZ footer is malformed.
      */
     fun decompress(input: ByteArray): ByteArray {
         val pakLen = input.size
@@ -93,19 +97,51 @@ object BlzCodec {
     /**
      * Compresses [input] using BLZ.
      *
-     * @param arm9 When true the first 0x4000 bytes are left uncompressed
-     *             (required for DS ARM9 secure-area binaries).
+     * @param input The raw binary data to compress.
+     * @param arm9 When `true` the first 0x4000 bytes are left uncompressed
+     *   (required for DS ARM9 secure-area binaries). The binary is validated:
+     *   magic bytes at 0x00/0x04/0x08 must equal `0xE7FFDEFF`, the half-word at
+     *   0x0C must be `0xDEFF`, and the word at 0x7FE must be `0`. The secure-area
+     *   CRC-16 (bytes 0x10–0x7FF) is recalculated and written to 0x0E before compression.
+     * @return The BLZ-encoded byte array. Returns a "not encoded" marker if compression
+     *   would not reduce the size.
+     * @throws IllegalArgumentException if [arm9] is `true` but the binary fails validation.
      */
     fun compress(input: ByteArray, arm9: Boolean = false): ByteArray {
         val rawLen = input.size
+
+        val rawBuf = input.copyOf()
+
+        // ARM9 secure-area validation + CRC update (mirrors CUE blz.c behaviour)
+        if (arm9) {
+            require(rawLen >= 0x4000) {
+                "BLZ: ARM9 binary too short ($rawLen bytes, need at least 0x4000)"
+            }
+            require(readU32(rawBuf, 0x00) == 0xE7FFDEFF) {
+                "BLZ: ARM9 secure-area magic missing at +0x00"
+            }
+            require(readU32(rawBuf, 0x04) == 0xE7FFDEFF) {
+                "BLZ: ARM9 secure-area magic missing at +0x04"
+            }
+            require(readU32(rawBuf, 0x08) == 0xE7FFDEFF) {
+                "BLZ: ARM9 secure-area magic missing at +0x08"
+            }
+            require(readU16(rawBuf, 0x0C) == 0xDEFF) {
+                "BLZ: ARM9 secure-area half-word marker missing at +0x0C"
+            }
+            require(readU16(rawBuf, 0x7FE) == 0) {
+                "BLZ: ARM9 end-of-secure-area marker non-zero at +0x7FE"
+            }
+            // Recalculate and write the CRC16 of the secure area (bytes 0x10..0x7FF)
+            val crc = crc16(rawBuf, 0x10, 0x7F0)
+            writeU16(rawBuf, 0x0E, crc)
+        }
 
         // How many bytes (from the END of the inverted data) to actually compress
         val rawNew = if (arm9 && rawLen >= 0x4000) rawLen - 0x4000 else rawLen
 
         val pakBufMax = rawLen + ((rawLen + 7) / 8) + 11
         val pakBuf = ByteArray(pakBufMax)
-
-        val rawBuf = input.copyOf()
         invertRange(rawBuf, 0, rawLen)          // work on inverted data
 
         var pak = 0
@@ -183,7 +219,14 @@ object BlzCodec {
     // Output builders
     // -------------------------------------------------------------------------
 
-    /** Produces a "not encoded" BLZ file: raw bytes padded to 4, then four zero bytes. */
+    /**
+     * Produces a "not encoded" BLZ output: raw bytes padded to 4-byte alignment,
+     * followed by four zero bytes (the `inc_len == 0` sentinel).
+     *
+     * @param raw The source byte array.
+     * @param rawLen Number of bytes from [raw] to include.
+     * @return The uncompressed BLZ output.
+     */
     private fun buildUncompressed(raw: ByteArray, rawLen: Int): ByteArray {
         val padded = (rawLen + 3) and -4
         val out = ByteArray(padded + 4)
@@ -247,11 +290,36 @@ object BlzCodec {
         }
     }
 
+    private fun readU16(buf: ByteArray, offset: Int): Int =
+        (buf[offset].toInt() and 0xFF) or ((buf[offset + 1].toInt() and 0xFF) shl 8)
+
     private fun readU32(buf: ByteArray, offset: Int): Long =
         (buf[offset].toLong() and 0xFF) or
                 ((buf[offset + 1].toLong() and 0xFF) shl 8) or
                 ((buf[offset + 2].toLong() and 0xFF) shl 16) or
                 ((buf[offset + 3].toLong() and 0xFF) shl 24)
+
+    private fun writeU16(buf: ByteArray, offset: Int, value: Int) {
+        buf[offset] = (value and 0xFF).toByte()
+        buf[offset + 1] = (value ushr 8 and 0xFF).toByte()
+    }
+
+    /**
+     * CRC-16 (polynomial 0x8408, initial value 0xFFFF) used in DS ARM9 secure area.
+     * Computes CRC of [len] bytes starting at [buf][offset].
+     */
+    private fun crc16(buf: ByteArray, offset: Int, len: Int): Int {
+        var crc = 0xFFFF
+        for (i in offset until offset + len) {
+            var b = buf[i].toInt() and 0xFF
+            repeat(8) {
+                crc = if ((crc xor b) and 1 != 0) (crc ushr 1) xor 0x8408
+                else crc ushr 1
+                b = b ushr 1
+            }
+        }
+        return crc and 0xFFFF
+    }
 
     private fun writeU24(buf: ByteArray, offset: Int, value: Long) {
         buf[offset] = (value and 0xFF).toByte()
