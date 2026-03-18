@@ -330,7 +330,8 @@ internal object NdsAudio {
      * @throws IllegalArgumentException if [data] is too small or does not begin with "SWAR".
      */
     fun swarToWavList(data: ByteArray): List<ByteArray> {
-        require(data.size >= 0x40) { "SWAR data too small (${data.size} < 0x40)" }
+        // Minimum: 0x3C bytes to read nEntries at 0x38 (the C reference only checks the magic).
+        require(data.size >= 0x3C) { "SWAR data too small (${data.size} < 0x3C)" }
         require(
             data[0] == 'S'.code.toByte() && data[1] == 'W'.code.toByte() &&
                     data[2] == 'A'.code.toByte() && data[3] == 'R'.code.toByte()
@@ -399,7 +400,10 @@ internal object NdsAudio {
         }
 
         val dataOffset = entryOffset + 0x0C
-        val dataSize = entryEnd - dataOffset
+        // Use the actual data size from the header fields, matching nsSwavCreateFromSamp:
+        //   dataSize = loopStartInBytes + loopLenInBytes
+        // (entryEnd - dataOffset may include trailing padding between entries)
+        val dataSize = minOf(loopStartInBytes + loopLenInBytes, entryEnd - dataOffset)
 
         val numPcmBytes = numSamples * 2   // always 16-bit output
         val out = ByteArray(WAV_HEADER_SIZE + numPcmBytes)

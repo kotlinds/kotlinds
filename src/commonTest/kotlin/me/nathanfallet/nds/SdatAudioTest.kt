@@ -127,7 +127,7 @@ class SdatAudioTest {
      * - 0x3C: absolute offset table (nEntries × u32)
      * - entries follow immediately after the table
      *
-     * The total file size is padded to at least 0x40 bytes so the SWAR magic check passes.
+     * The total file size is padded to at least 0x3C bytes so the nEntries read passes.
      *
      * @param swavEntries List of (swavHeader, sampleData) pairs; swavHeader must be 12 bytes.
      * @return A valid SWAR byte array.
@@ -145,8 +145,8 @@ class SdatAudioTest {
             entryOffsets[i] = cursor
             cursor += swavEntries[i].first.size + swavEntries[i].second.size
         }
-        // Ensure at least 0x40 bytes so the size-check in swarToWavList passes
-        val totalSize = maxOf(cursor, 0x40)
+        // Ensure at least 0x3C bytes so the nEntries read at 0x38 works for empty SWARs
+        val totalSize = maxOf(cursor, 0x3C)
 
         val buf = ByteArray(totalSize)
 
