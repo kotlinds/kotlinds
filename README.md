@@ -23,7 +23,7 @@ Kotlin Multiplatform utilities to work with .nds files
 
 ```kotlin
 dependencies {
-    implementation("me.nathanfallet.nds:kotlin-nds:1.1.0")
+    implementation("me.nathanfallet.nds:kotlin-nds:1.2.0")
 }
 ```
 
