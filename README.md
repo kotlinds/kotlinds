@@ -14,7 +14,7 @@ Kotlin Multiplatform utilities to work with .nds files
 - **NARC archive support** — Unpack and repack NARC containers, with both anonymous (index-based) and named (path-based)
   file access.
 - **SDAT archive support** — Unpack and repack SDAT sound archives; decode STRM streams and SWAR wave archives to
-  standard WAV files (PCM8, PCM16, IMA-ADPCM).
+  standard WAV files (PCM8, PCM16, IMA-ADPCM); convert SSEQ sequences to standard MIDI files.
 - **Compression codecs** — BLZ, LZSS/LZ10, LZ11, RLE, and Huffman (4-bit & 8-bit). Auto-detection dispatches to the
   right codec from the magic byte.
 - **Multiplatform** — Runs on JVM, JavaScript (Node.js & browser), and Native (macOS, Linux, iOS, Windows, …).
@@ -132,7 +132,8 @@ The `unk` field on every entry type (`SdatSseqFile.unk`, `SdatSbnkFile.unk`, `Sd
 #### Converting to audio
 
 Streams and wave archives can be decoded to standard WAV files (16-bit signed PCM). All three NDS
-wave encodings are supported: PCM8, PCM16, and IMA-ADPCM.
+wave encodings are supported: PCM8, PCM16, and IMA-ADPCM. Sequences can be exported to standard
+MIDI files.
 
 ```kotlin
 // STRM → single WAV (may be stereo)
@@ -142,6 +143,10 @@ File("bgm.wav").writeBytes(wav)
 // SWAR → one WAV per instrument sample (always mono)
 val wavs: List<ByteArray> = archive.waveArchives[0].toWavList()
 wavs.forEachIndexed { i, w -> File("sample_$i.wav").writeBytes(w) }
+
+// SSEQ → standard MIDI file (uses General MIDI instruments, not game sounds)
+val mid: ByteArray = archive.sequences[0].toMidi()
+File("bgm.mid").writeBytes(mid)
 ```
 
 ### Compression

@@ -24,6 +24,29 @@ data class SdatSseqFile(
 ) {
 
     /**
+     * Converts this SSEQ sequence file to a Standard MIDI File (SMF).
+     *
+     * The returned byte array is a complete, self-contained MIDI file that can be written
+     * directly to disk or passed to a MIDI player.  The file uses 48 ticks per quarter note
+     * and is SMF Type 0 (single track) when only the primary track is active, or SMF Type 1
+     * (multiple tracks) when additional tracks were opened by the sequence via the `OPEN TRACK`
+     * (0x93) command.
+     *
+     * Conversion behaviour mirrors the `sseq2mid` reference implementation by loveemu:
+     * - Notes are emitted as note-on / note-off (velocity 0) pairs.
+     * - Tempo changes map to SMF meta event 0x51.
+     * - Pan, volume, expression and other continuous controllers map to the corresponding
+     *   MIDI CC numbers.
+     * - Program changes use bank-select CCs (0 / 32) plus a program-change message.
+     * - The sequence is played through once (loop count = 1); `JUMP` backward loops consume
+     *   one pass then stop.
+     *
+     * @return A byte array containing the full SMF file.
+     * @throws IllegalArgumentException if [data] does not contain a valid SSEQ file.
+     */
+    fun toMidi(): ByteArray = SseqToMidi.convert(data)
+
+    /**
      * Compares two [SdatSseqFile] instances for structural equality, including [data] content.
      *
      * @param other The object to compare against.
