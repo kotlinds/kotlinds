@@ -227,7 +227,7 @@ val decompressedArm9: ByteArray = BlzCodec.decompress(compressedArm9)
 
 ## Libraries & tools using kotlin-nds
 
-- [pokemon-map-randomizer](https://github.com/nathanfallet/pokemon-map-randomizer): A Kotlin/Compose Multiplatform port
+- [pokemon-map-randomizer](https://github.com/kotlinds/pokemon-map-randomizer): A Kotlin/Compose Multiplatform port
   of hgss-map-randomizer, the original C++ map randomizer for Pokémon HeartGold, SoulSilver, Black 2, and White 2.
 
 If you are using kotlin-nds in your project/library, please let us know by opening a pull request to add it to this
