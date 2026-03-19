@@ -21,9 +21,18 @@ internal object SbnkToSf2 {
         0x84, 0x89, 0x8F
     )
 
-    private val DECIBEL_SQUARE_TABLE: IntArray = IntArray(128) { i ->
-        round(-((127.0 - i) / 127.0).pow(2) * 727.0).toInt()
-    }
+    // Hardcoded table from VGMTrans NDSInstrSet.cpp — maps NDS sustain value (0–127) to
+    // dB attenuation in tenths (negative values → attenuation).
+    private val DECIBEL_SQUARE_TABLE = intArrayOf(
+        -481, -480, -480, -480, -480, -480, -480, -480, -480, -460, -442, -425, -410, -396, -383, -371,
+        -360, -349, -339, -330, -321, -313, -305, -297, -289, -282, -276, -269, -263, -257, -251, -245,
+        -239, -234, -229, -224, -219, -214, -210, -205, -201, -196, -192, -188, -184, -180, -176, -173,
+        -169, -165, -162, -158, -155, -152, -149, -145, -142, -139, -136, -133, -130, -127, -125, -122,
+        -119, -116, -114, -111, -109, -106, -103, -101,  -99,  -96,  -94,  -91,  -89,  -87,  -85,  -82,
+         -80,  -78,  -76,  -74,  -72,  -70,  -68,  -66,  -64,  -62,  -60,  -58,  -56,  -54,  -52,  -50,
+         -49,  -47,  -45,  -43,  -42,  -40,  -38,  -36,  -35,  -33,  -31,  -30,  -28,  -27,  -25,  -23,
+         -22,  -20,  -19,  -17,  -16,  -14,  -13,  -11,  -10,   -8,   -7,   -6,   -4,   -3,   -1,    0,
+    )
 
     // SF2 generator opcodes (from VGMTrans SF2File.h)
     private const val GEN_REVERB_EFFECTS_SEND = 16
@@ -339,12 +348,13 @@ internal object SbnkToSf2 {
     }
 
     private fun generateNoise(): ShortArray {
+        // Galois LFSR matching VGMTrans NDSInstrSet.cpp: polynomial 0x6000, initial state 0x7FFF.
         var lfsr = 0x7FFF
         return ShortArray(PSG_SAMPLE_RATE) {
-            val bit = ((lfsr ushr 1) xor lfsr) and 1
+            val carry = lfsr and 1
             lfsr = lfsr ushr 1
-            if (bit != 0) lfsr = lfsr or 0x4000
-            if (lfsr and 1 != 0) 32767 else -32768
+            if (carry != 0) lfsr = lfsr xor 0x6000
+            if (carry != 0) -32767 else 32767
         }
     }
 
