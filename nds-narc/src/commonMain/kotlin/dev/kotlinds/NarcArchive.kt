@@ -1,6 +1,5 @@
 package dev.kotlinds
 
-
 /**
  * Reads and writes Nintendo DS NARC container files.
  *

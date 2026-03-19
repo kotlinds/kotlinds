@@ -68,7 +68,7 @@ internal object NdsAudio {
      * @param numPcmBytes Total size of the 16-bit PCM sample data that follows.
      */
     private fun writeWavHeader(buf: ByteArray, channels: Int, sampleRate: Int, numPcmBytes: Int) {
-        val riffSize = numPcmBytes + NdsAudio.WAV_HEADER_SIZE - 8
+        val riffSize = numPcmBytes + WAV_HEADER_SIZE - 8
         // RIFF chunk
         buf[0x00] = 'R'.code.toByte(); buf[0x01] = 'I'.code.toByte()
         buf[0x02] = 'F'.code.toByte(); buf[0x03] = 'F'.code.toByte()
@@ -133,7 +133,7 @@ internal object NdsAudio {
         val transferred = IntArray(channels)
 
         // Initialise ADPCM headers (first 4 bytes of each channel's block)
-        if (waveType == NdsAudio.WAVE_ADPCM) {
+        if (waveType == WAVE_ADPCM) {
             for (ch in 0 until channels) {
                 val chBase = blockOffset + ch * lenBlockPerChan
                 adpcmSamp[ch] = readS16LE(blocks, chBase)
@@ -261,11 +261,11 @@ internal object NdsAudio {
 
         // Total PCM output: numSamples × channels × 2 bytes (always 16-bit)
         val numPcmBytes = numSamples * channels * 2
-        val out = ByteArray(NdsAudio.WAV_HEADER_SIZE + numPcmBytes)
+        val out = ByteArray(WAV_HEADER_SIZE + numPcmBytes)
         writeWavHeader(out, channels, sampleRate, numPcmBytes)
 
         var srcOffset = dataOffset
-        var dstOffset = NdsAudio.WAV_HEADER_SIZE
+        var dstOffset = WAV_HEADER_SIZE
 
         // Decode all blocks except the last
         for (blockId in 0 until numBlocks - 1) {
@@ -401,14 +401,14 @@ internal object NdsAudio {
         val dataSize = minOf(loopStartInBytes + loopLenInBytes, entryEnd - dataOffset)
 
         val numPcmBytes = numSamples * 2   // always 16-bit output
-        val out = ByteArray(NdsAudio.WAV_HEADER_SIZE + numPcmBytes)
+        val out = ByteArray(WAV_HEADER_SIZE + numPcmBytes)
         writeWavHeader(out, 1, sampleRate, numPcmBytes)
 
         // For SWAV: one block = the entire sample (all data in one call)
         if (numSamples > 0 && dataSize > 0) {
             decodeBlock(
                 dest = out,
-                destOffset = NdsAudio.WAV_HEADER_SIZE,
+                destOffset = WAV_HEADER_SIZE,
                 blocks = data,
                 blockOffset = dataOffset,
                 lenBlockPerChan = dataSize,

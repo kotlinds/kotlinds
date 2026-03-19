@@ -11,7 +11,7 @@ mavenPublishing {
     publishToMavenCentral(com.vanniktech.maven.publish.SonatypeHost.CENTRAL_PORTAL)
     signAllPublications()
     pom {
-        name.set("core")
+        name.set("nds-narc")
         description.set("Kotlin Multiplatform utilities to work with .nds files")
         url.set(project.ext.get("url")?.toString())
         licenses {

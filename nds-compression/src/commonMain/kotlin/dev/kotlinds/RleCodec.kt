@@ -1,6 +1,5 @@
 package dev.kotlinds
 
-
 /**
  * RLE (Run-Length Encoding) codec for Nintendo DS compressed files.
  *
@@ -58,7 +57,7 @@ object RleCodec {
                 }
             } else {
                 // Run block: repeat the next byte (flag & 0x7F) + 3 times
-                val count = (flag and 0x7F) + RleCodec.MIN_RUN
+                val count = (flag and 0x7F) + MIN_RUN
                 val byte = if (src < input.size) input[src++] else 0
                 repeat(count) {
                     if (dst < uncompressedSize) {
@@ -102,13 +101,13 @@ object RleCodec {
             // Measure the run of identical bytes starting at src
             val runLen = measureRun(input, src, rawLen)
 
-            if (runLen >= RleCodec.MIN_RUN) {
+            if (runLen >= MIN_RUN) {
                 // Emit one or more run blocks for this run
                 var remaining = runLen
                 while (remaining > 0) {
-                    val chunk = minOf(remaining, RleCodec.MAX_RUN)
+                    val chunk = minOf(remaining, MAX_RUN)
                     // Flag byte: MSB set, lower 7 bits = chunk - MIN_RUN
-                    buf[dst++] = (0x80 or (chunk - RleCodec.MIN_RUN)).toByte()
+                    buf[dst++] = (0x80 or (chunk - MIN_RUN)).toByte()
                     buf[dst++] = input[src]
                     src += chunk
                     remaining -= chunk
@@ -117,9 +116,9 @@ object RleCodec {
                 // Collect literal bytes up to MAX_LITERAL, stopping early when a run of >= MIN_RUN starts
                 val litStart = src
                 var litEnd = src
-                while (litEnd < rawLen && litEnd - litStart < RleCodec.MAX_LITERAL) {
+                while (litEnd < rawLen && litEnd - litStart < MAX_LITERAL) {
                     val nextRun = measureRun(input, litEnd, rawLen)
-                    if (nextRun >= RleCodec.MIN_RUN) break
+                    if (nextRun >= MIN_RUN) break
                     litEnd++
                 }
                 // Guard: always advance at least one byte to avoid an infinite loop
@@ -153,7 +152,7 @@ object RleCodec {
         if (pos >= end) return 0
         val b = data[pos]
         var len = 1
-        while (pos + len < end && len < RleCodec.MAX_RUN && data[pos + len] == b) len++
+        while (pos + len < end && len < MAX_RUN && data[pos + len] == b) len++
         return len
     }
 

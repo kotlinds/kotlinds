@@ -12,4 +12,8 @@ plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
 }
 
-include(":core")
+include(":nds-all")
+include(":nds-rom")
+include(":nds-compression")
+include(":nds-narc")
+include(":nds-sound")

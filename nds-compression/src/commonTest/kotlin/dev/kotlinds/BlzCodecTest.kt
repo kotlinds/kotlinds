@@ -1,22 +1,9 @@
 package dev.kotlinds
 
-import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
 class BlzCodecTest {
-    private val romFile = File("../game.nds")
-    private fun requireRom(): ByteArray? =
-        if (romFile.exists()) romFile.readBytes() else null
-
-    @Test
-    fun `decompress arm9 produces larger output`() {
-        val bytes = requireRom() ?: return
-        val rom = NdsRom.parse(bytes)
-        val decompressed = BlzCodec.decompress(rom.arm9)
-        assertTrue(decompressed.size >= rom.arm9.size, "Decompressed ARM9 should be at least as large as compressed")
-    }
-
     @Test
     fun `compress then decompress round-trip`() {
         val original = ByteArray(1024) { (it * 7 + 13).toByte() }

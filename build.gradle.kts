@@ -23,5 +23,8 @@ allprojects {
 }
 
 dependencies {
-    kover(projects.core)
+    kover(projects.ndsRom)
+    kover(projects.ndsCompression)
+    kover(projects.ndsNarc)
+    kover(projects.ndsSound)
 }
