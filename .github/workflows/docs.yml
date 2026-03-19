@@ -26,7 +26,7 @@ jobs:
       - name: Build Dokka HTML
         run: ./gradlew dokkaHtmlMultiModule
       - name: Add CNAME
-        run: echo "kotlinds.dev" > build/dokka/html/CNAME
+        run: echo "kotlinds.dev" > build/dokka/htmlMultiModule/CNAME
       - name: Generate sitemap
         uses: guimauvedigital/generate-sitemap@v1
         with:
