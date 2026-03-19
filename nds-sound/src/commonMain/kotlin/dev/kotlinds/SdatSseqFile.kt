@@ -65,10 +65,13 @@ data class SdatSseqFile(
      * @return A byte array containing the complete SF2 file.
      */
     fun toSf2(archive: SdatArchive): ByteArray {
-        val bank = archive.banks[this.bank]
-        val wars = bank.wars
-            .filter { it >= 0 }
-            .map { archive.waveArchives[it] }
+        val bank = archive.banksBySlot[this.bank]
+            ?: archive.banks.getOrNull(this.bank)
+            ?: return ByteArray(0)
+        val wars = bank.wars.map { slot ->
+            if (slot >= 0) archive.waveArchivesBySlot[slot] ?: archive.waveArchives.getOrNull(slot)
+            else null
+        }
         return bank.toSf2(wars)
     }
 

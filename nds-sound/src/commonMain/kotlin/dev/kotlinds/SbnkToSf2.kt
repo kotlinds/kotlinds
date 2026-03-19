@@ -97,7 +97,7 @@ internal object SbnkToSf2 {
     // Entry point
     // -------------------------------------------------------------------------
 
-    fun convert(bank: SdatSbnkFile, wars: List<SdatSwarFile>): ByteArray {
+    fun convert(bank: SdatSbnkFile, wars: List<SdatSwarFile?>): ByteArray {
         val data = bank.data
         require(data.size >= 0x40) { "SBNK data too small" }
         require(
