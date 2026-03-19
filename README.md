@@ -21,9 +21,12 @@ Kotlin Multiplatform utilities to work with .nds files
 
 ## Installation
 
+Add one or more modules to your project:
+
 ```kotlin
 dependencies {
-    implementation("dev.kotlinds:core:1.2.0")
+    implementation("dev.kotlinds:nds-all:1.2.0") // All modules
+    implementation("dev.kotlinds:nds-narc:1.2.0") // Specific module
 }
 ```
 
