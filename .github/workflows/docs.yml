@@ -24,19 +24,19 @@ jobs:
           distribution: 'temurin'
           java-version: 21
       - name: Build Dokka HTML
-        run: ./gradlew dokkaHtmlMultiModule
+        run: ./gradlew :dokkaGenerate
       - name: Add CNAME
-        run: echo "kotlinds.dev" > build/dokka/htmlMultiModule/CNAME
+        run: echo "kotlinds.dev" > build/dokka/html/CNAME
       - name: Generate sitemap
         uses: guimauvedigital/generate-sitemap@v1
         with:
           base_url: https://kotlinds.dev
-          output_path: build/dokka/htmlMultiModule/sitemap.xml
-          input_dir: build/dokka/htmlMultiModule
+          output_path: build/dokka/html/sitemap.xml
+          input_dir: build/dokka/html
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: build/dokka/htmlMultiModule
+          path: build/dokka/html
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

@@ -1,3 +1,7 @@
+import com.vanniktech.maven.publish.JavadocJar
+import com.vanniktech.maven.publish.KotlinMultiplatform
+import com.vanniktech.maven.publish.SourcesJar
+
 plugins {
     alias(libs.plugins.multiplatform)
     alias(libs.plugins.kover)
@@ -8,7 +12,10 @@ plugins {
 }
 
 mavenPublishing {
-    publishToMavenCentral(com.vanniktech.maven.publish.SonatypeHost.CENTRAL_PORTAL)
+    // Empty javadoc jars: the full Dokka site is published on kotlinds.dev, and embedding it
+    // in each of the ~19 platform publications would blow the Maven Central size limits.
+    configure(KotlinMultiplatform(javadocJar = JavadocJar.Empty(), sourcesJar = SourcesJar.Sources()))
+    publishToMavenCentral()
     signAllPublications()
     pom {
         name.set("nds-all")
