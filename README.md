@@ -26,8 +26,8 @@ Add one or more modules to your project:
 
 ```kotlin
 dependencies {
-    implementation("dev.kotlinds:nds-all:1.2.1") // All modules
-    implementation("dev.kotlinds:nds-narc:1.2.1") // Specific module
+    implementation("dev.kotlinds:nds-all:1.2.2") // All modules
+    implementation("dev.kotlinds:nds-narc:1.2.2") // Specific module
 }
 ```
 
